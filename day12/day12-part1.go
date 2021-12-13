@@ -57,6 +57,25 @@ func readFile(path string) (caveSystem CaveSystem, err error) {
 	return caveSystem, nil
 }
 
+func countPaths(caveSystem CaveSystem, sol []string, used map[string]bool, countSol *int) {
+	if sol[len(sol)-1] == "end" {
+		*countSol++
+		return
+	}
+	for _, neighbour := range caveSystem.graph[sol[len(sol)-1]] {
+		_, ok := used[neighbour.name]
+		if neighbour.isSmall && ok {
+			continue
+		}
+
+		used[neighbour.name] = true
+		sol = append(sol, neighbour.name)
+		countPaths(caveSystem, sol, used, countSol)
+		delete(used, neighbour.name)
+		sol = sol[:len(sol)-1]
+	}
+}
+
 func main() {
 	path := "day12/in-day12.txt"
 
@@ -64,6 +83,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	result := 0
+	used := make(map[string]bool)
+	sol := []string{"start"}
+	used["start"] = true
 
-	printCaveSystem(cave)
+	countPaths(cave, sol, used, &result)
+
+	fmt.Printf("%d\n", result)
 }
