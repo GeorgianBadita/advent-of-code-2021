@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -25,42 +26,72 @@ func readFile(path string) (chunks []string, err error) {
 
 func solve(path string) (int, error) {
 	chunks, err := readFile(path)
-
 	if err != nil {
 		return 0, err
 	}
 
-	//pointSystem := map[string]int{")": 3, "]": 57, "}": 1197, ">": 25137}
+	pointSystem := map[string]int{"(": 1, "[": 2, "{": 3, "<": 4}
 	lookupTable := map[string]string{")": "(", "]": "[", "}": "{", ">": "<"}
-	idx := 0
+
+	goodChunks := make([]string, 0)
+
 	for _, chunk := range chunks {
 		stack := make([]string, 0)
-		for idx < len(chunk) {
-			currentValue := string([]byte{chunk[idx]})
+		isGoodChunk := true
+		for _, elem := range chunk {
+			currentValue := string([]rune{elem})
 			if currentValue == "(" || currentValue == "[" || currentValue == "{" || currentValue == "<" {
 				stack = append(stack, currentValue)
 			} else {
 				expected := lookupTable[currentValue]
-				if len(stack) > 0 && stack[len(stack)-1] != expected {
+				if stack[len(stack)-1] != expected {
+					isGoodChunk = false
 					break
 				} else {
-					done := false
-					for len(stack) > 0 && stack[len(stack)-1] == lookupTable[string([]byte{chunk[idx]})] {
-						stack = stack[:len(stack)-1]
-						idx++
-						done = true
-					}
-					if done {
-						//idx--
-					}
+					stack = stack[:len(stack)-1]
 				}
 			}
-			idx++
 		}
-		fmt.Printf("%v\n", stack)
-
+		if isGoodChunk {
+			goodChunks = append(goodChunks, chunk)
+		}
 	}
-	return 0, nil
+	scores := make([]int, 0)
+
+	for _, chunk := range goodChunks {
+		stack := make([]string, 0)
+		idx := 0
+		for idx < len(chunk) {
+			moved := false
+			currVal := string([]byte{chunk[idx]})
+			if currVal == "(" || currVal == "[" || currVal == "{" || currVal == "<" {
+				stack = append(stack, currVal)
+			} else {
+				expected := lookupTable[currVal]
+				for len(stack) > 0 && idx < len(chunk) && stack[len(stack)-1] == expected {
+					stack = stack[:len(stack)-1]
+					idx += 1
+					moved = true
+					if idx == len(chunk) {
+						break
+					}
+					currVal = string([]byte{chunk[idx]})
+					expected = lookupTable[currVal]
+				}
+			}
+			if !moved {
+				idx++
+			}
+
+		}
+		score := 0
+		for i := len(stack) - 1; i >= 0; i-- {
+			score = score*5 + pointSystem[stack[i]]
+		}
+		scores = append(scores, score)
+	}
+	sort.Ints(scores)
+	return scores[len(scores)/2], nil
 }
 
 func main() {
