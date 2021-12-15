@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 )
@@ -10,6 +11,11 @@ import (
 type Rule struct {
 	left  string
 	right string
+}
+
+type ExpandKey struct {
+	from string
+	to   string
 }
 
 func readFile(path string) (template string, rules []Rule, err error) {
@@ -35,28 +41,15 @@ func readFile(path string) (template string, rules []Rule, err error) {
 	return template, rules, nil
 }
 
-func expand(template map[string]int, rules []Rule) map[string]int {
-	for _, rule := range rules {
-		occ, ok := template[rule.left]
-		if ok {
-			first := string([]byte{rule.left[0]}) + rule.right
-			second := rule.right + string([]byte{rule.left[1]})
+func expand(template map[string]int, rules map[string]string) map[string]int {
+	update := make(map[string]int)
 
-			occFirst, okFirst := template[first]
-			if okFirst {
-				template[first] += occFirst + occFirst
-			} else {
-				template[first] = occ
-			}
-			occSecond, okSecond := template[second]
-			if okSecond {
-				template[second] += occSecond + occFirst
-			} else {
-				template[second] = occ
-			}
-		}
+	for pair, occ := range template {
+		update[string(pair[0])+rules[pair]] += occ
+		update[rules[pair]+string(pair[1])] += occ
 	}
-	return template
+
+	return update
 }
 
 func solve(path string, steps int) (int, error) {
@@ -67,16 +60,37 @@ func solve(path string, steps int) (int, error) {
 	}
 
 	templateMap := make(map[string]int)
+	rulesMap := make(map[string]string)
 
 	for idx := 0; idx < len(template)-1; idx++ {
-		templateMap[template[idx:idx+1]] = 1
+		templateMap[template[idx:idx+2]]++
+	}
+	for idx := 0; idx < len(rules); idx++ {
+		rulesMap[rules[idx].left] = rules[idx].right
 	}
 
-	for step := 0; step < steps; steps++ {
-		templateMap = expand(templateMap, rules)
+	for idx := 0; idx < steps; idx++ {
+		templateMap = expand(templateMap, rulesMap)
 	}
 
-	return 0, nil
+	occMap := make(map[string]int)
+
+	for pair, occ := range templateMap {
+		occMap[string(pair[0])] += occ
+	}
+
+	max, min := 0, math.MaxInt
+
+	for _, occ := range occMap {
+		if occ < min {
+			min = occ
+		}
+		if occ > max {
+			max = occ
+		}
+	}
+
+	return max - min + 1, nil
 }
 
 func main() {

@@ -63,6 +63,8 @@ func solve(path string, steps int) (int, error) {
 	}
 
 	for idx := 0; idx < steps; idx++ {
+		fmt.Printf("Currently at step: %d\n", idx)
+
 		template = expand(template, rules)
 	}
 
@@ -94,7 +96,7 @@ func solve(path string, steps int) (int, error) {
 
 func main() {
 	path := "day14/in-day14.txt"
-	steps := 20
+	steps := 10
 	res, err := solve(path, steps)
 
 	if err != nil {
